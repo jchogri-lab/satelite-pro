@@ -8,35 +8,25 @@ camera.position.set(15, 10, 25);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-
-// --- CONFIGURACIÓN DE BRILLO EXTREMO ---
-renderer.toneMapping = THREE.NoToneMapping; // Usamos luz cruda para máximo brillo
+renderer.toneMapping = THREE.ACESFilmicToneMapping; 
+renderer.toneMappingExposure = 1.8; // Exposición alta pero controlada
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// --- SISTEMA DE LUCES "ESTUDIO ESPACIAL" ---
-// 1. Luz Global Blanca (Elimina cualquier sombra negra)
-const ambient = new THREE.AmbientLight(0xffffff, 2.5); 
-scene.add(ambient);
+// --- ILUMINACIÓN EQUILIBRADA ---
+// Luz ambiental para que las sombras no sean negras
+scene.add(new THREE.AmbientLight(0xffffff, 1.5)); 
 
-// 2. Luz de "Cielo" (Ilumina arriba y abajo con fuerza)
-const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 2.0);
-scene.add(hemiLight);
+// Luz blanca desde arriba
+const sun = new THREE.DirectionalLight(0xffffff, 2);
+sun.position.set(10, 20, 10);
+scene.add(sun);
 
-// 3. Luces Direccionales (Como focos de cine apuntando al centro)
-const sun1 = new THREE.DirectionalLight(0xffffff, 3);
-sun1.position.set(50, 50, 50);
-scene.add(sun1);
-
-const sun2 = new THREE.DirectionalLight(0xffffff, 3);
-sun2.position.set(-50, -50, -50);
-scene.add(sun2);
-
-// 4. Luz pegada a la Cámara (Donde mires, habrá luz)
-const camLight = new THREE.PointLight(0xffffff, 4);
+// Luz de cámara (para que el frente siempre tenga luz)
+const camLight = new THREE.PointLight(0xffffff, 2);
 camera.add(camLight);
 scene.add(camera);
 
@@ -47,11 +37,11 @@ let earth;
 gltfLoader.load('assets/Earth_1_12756.glb', (gltf) => {
     earth = gltf.scene;
     earth.scale.set(0.015, 0.015, 0.015); 
-    earth.position.set(0, -100, -150); 
+    earth.position.set(0, -120, -180); 
     scene.add(earth);
 });
 
-// --- CARGA DEL SATÉLITE CON AUTO-ILUMINACIÓN ---
+// --- CARGA DEL SATÉLITE (AJUSTE DE TEXTURAS) ---
 const satelliteGroup = new THREE.Group();
 scene.add(satelliteGroup);
 
@@ -64,16 +54,16 @@ gltfLoader.load('assets/satellite.glb', (gltf) => {
     
     model.traverse((n) => {
         if (n.isMesh) {
-            // FORZAMOS QUE EL MATERIAL SEA CLARO
-            n.material.metalness = 0.0; // Quitamos el metal para que no refleje el "negro"
-            n.material.roughness = 1.0; // Lo hacemos mate para que atrape toda la luz
-            
-            // TRUCO FINAL: Hacemos que el satélite brille un poquito por sí solo
+            // REDUCIMOS EL BLANCO: Bajamos la emisión
             n.material.emissive = new THREE.Color(0xffffff);
-            n.material.emissiveIntensity = 0.4; // Ajustá este valor si brilla demasiado
+            n.material.emissiveIntensity = 0.15; // Ya no es una lámpara, solo un refuerzo
             
-            // Si tiene texturas, las aclaramos
-            if (n.material.map) n.material.map.colorSpace = THREE.SRGBColorSpace;
+            // DEVOLVEMOS EL METAL PERO SIN QUE OSCUREZCA
+            n.material.metalness = 0.3; // Un poco de brillo metálico
+            n.material.roughness = 0.5; // Que la luz se disperse bien
+            
+            // Si el modelo tiene colores, esto los resalta
+            if(n.material.map) n.material.map.colorSpace = THREE.SRGBColorSpace;
         }
     });
     
@@ -84,7 +74,7 @@ gltfLoader.load('assets/satellite.glb', (gltf) => {
 const starGeo = new THREE.BufferGeometry();
 const starCoords = [];
 for(let i=0; i<10000; i++) {
-    starCoords.push((Math.random()-0.5)*15000, (Math.random()-0.5)*15000, (Math.random()-0.5)*15000);
+    starCoords.push((Math.random()-0.5)*20000, (Math.random()-0.5)*20000, (Math.random()-0.5)*20000);
 }
 starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
 scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 2.5})));
