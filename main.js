@@ -70,15 +70,25 @@ const mliMat = new THREE.MeshStandardMaterial({
     color: 0xffcc33, metalness: 0.9, roughness: 0.4 
 });
 
-gltfLoader.load('./assets/satellite.glb, (gltf) => {
-    satellite.add(gltf.scene);
-}, undefined, (err) => {
-    // Si no hay modelo externo, creamos la estructura base pro
-    console.warn("Cargando estructura pro por defecto...");
-    const core = new THREE.Mesh(new THREE.CylinderGeometry(1, 1.2, 2.5, 8), mliMat);
-    satellite.add(core);
-});
-scene.add(satellite);
+// Usar la ruta relativa correcta para GitHub Pages
+const modelPath = './assets/satellite.glb'; 
+
+gltfLoader.load(
+    modelPath, 
+    (gltf) => {
+        console.log("Satélite cargado con éxito");
+        satellite.add(gltf.scene);
+    },
+    (xhr) => {
+        console.log((xhr.loaded / xhr.total * 100) + '% cargado');
+    },
+    (error) => {
+        console.error("Error al cargar el modelo:", error);
+        // Si falla el .glb, creamos un cubo de emergencia para saber que el motor funciona
+        const box = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), mliMat);
+        satellite.add(box);
+    }
+);
 
 // --- ESTRELLAS ---
 const stars = new THREE.Points(
