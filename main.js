@@ -2,54 +2,52 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// --- CONFIGURACIÓN DE ESCENA ---
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 50000);
-camera.position.set(15, 12, 30);
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+camera.position.set(12, 5, 18); // Cámara más cerca del satélite
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.toneMapping = THREE.ACESFilmicToneMapping; // Look cinematográfico
-renderer.toneMappingExposure = 1.5; 
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.6;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// --- ILUMINACIÓN PROFESIONAL ---
-// 1. EL SOL (Luz dura y blanca)
-const sun = new THREE.DirectionalLight(0xffffff, 4);
-sun.position.set(100, 50, 100);
-scene.add(sun);
+// --- SOL POTENTE (ILUMINACIÓN LATERAL) ---
+const sunLight = new THREE.DirectionalLight(0xffffff, 5);
+sunLight.position.set(100, 20, 100);
+scene.add(sunLight);
 
-// 2. LUZ DE REBOTE (Azulada, como si la Tierra reflejara luz)
-const earthReflect = new THREE.DirectionalLight(0x4488ff, 1.5);
-earthReflect.position.set(-50, -50, -50);
-scene.add(earthReflect);
+// Luz azulada que viene desde abajo (Reflejo de la Tierra)
+const earthBounce = new THREE.DirectionalLight(0x4488ff, 2);
+earthBounce.position.set(-10, -50, -10);
+scene.add(earthBounce);
 
-// 3. LUZ AMBIENTAL (Para que las sombras no sean negras carbón)
-scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+scene.add(new THREE.AmbientLight(0xffffff, 0.3));
 
 const gltfLoader = new GLTFLoader();
 
-// --- CARGA DE LA TIERRA (Tu modelo GLB) ---
+// --- 1. TIERRA (Más cerca y grande para realismo de órbita) ---
 let earth;
 gltfLoader.load('assets/Earth_1_12756.glb', (gltf) => {
     earth = gltf.scene;
-    earth.scale.set(0.018, 0.018, 0.018); 
-    earth.position.set(0, -130, -250); // Distancia para que se vea la curvatura
+    // Aumentamos escala y la acercamos
+    earth.scale.set(0.04, 0.04, 0.04); 
+    earth.position.set(0, -55, -40); // El satélite vuela "sobre" ella
     scene.add(earth);
     
     earth.traverse((n) => {
         if (n.isMesh) {
-            n.material.roughness = 0.7;
+            n.material.roughness = 0.8;
             n.material.metalness = 0.1;
         }
     });
 });
 
-// --- CARGA DEL SATÉLITE (Efecto Metal Real) ---
+// --- 2. SATÉLITE (Ajuste de Materiales) ---
 const satelliteGroup = new THREE.Group();
 scene.add(satelliteGroup);
 
@@ -57,38 +55,42 @@ gltfLoader.load('assets/satellite.glb', (gltf) => {
     const model = gltf.scene;
     const box = new THREE.Box3().setFromObject(model);
     const size = box.getSize(new THREE.Vector3()).length();
-    const scale = 12 / size; 
+    const scale = 10 / size; 
     model.scale.set(scale, scale, scale);
     
     model.traverse((n) => {
         if (n.isMesh) {
-            // Esto hace que el satélite brille como metal de verdad
-            n.material.metalness = 0.8; 
-            n.material.roughness = 0.2; 
-            // Si el material es muy oscuro, le damos un empujón de brillo
-            if (n.material.color) {
-                n.material.color.multiplyScalar(1.5); 
-            }
+            // Hacemos que brille como metal real
+            n.material.metalness = 1.0; 
+            n.material.roughness = 0.15;
+            // Reforzamos el color para que no se vea gris
+            if (n.material.color) n.material.color.multiplyScalar(1.2);
         }
     });
     satelliteGroup.add(model);
 });
 
-// --- ESPACIO (Estrellas más reales) ---
+// --- 3. FONDO ESPACIAL (Nebulosas y Estrellas) ---
+// Agregamos una "Skybox" negra con estrellas para que no sea solo puntos
 const starGeo = new THREE.BufferGeometry();
 const starCoords = [];
 for(let i=0; i<20000; i++) {
-    starCoords.push((Math.random()-0.5)*40000, (Math.random()-0.5)*40000, (Math.random()-0.5)*40000);
+    starCoords.push((Math.random()-0.5)*8000, (Math.random()-0.5)*8000, (Math.random()-0.5)*8000);
 }
 starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
-scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 2})));
+scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 1.5})));
 
+// --- ANIMACIÓN ---
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
     
-    if (earth) earth.rotation.y += 0.0001;
-    satelliteGroup.rotation.y += 0.001; 
+    if (earth) {
+        earth.rotation.y += 0.0001; // Rotación lenta
+    }
+    
+    // El satélite gira suavemente para mostrar todos los lados
+    satelliteGroup.rotation.y += 0.0005; 
     
     renderer.render(scene, camera);
 }
