@@ -38,5 +38,15 @@
         { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
     </script>
     <script type="module" src="main.js"></script>
+    <div id="inspector-panel" class="panel" style="display:none; bottom: 80px; left: 20px;">
+    <h3 id="part-name">Nombre de la pieza</h3>
+    <p id="part-desc">Haz clic en una parte para ver su función.</p>
+    <button onclick="document.getElementById('inspector-panel').style.display='none'">Cerrar</button>
+</div>
+
+<div id="controls-bottom" class="panel">
+    <button onclick="togglePause()">⏯️ Pausa / Play</button>
+    <button onclick="setCameraPreset('satellite')">🛰️ Inspeccionar Satélite</button>
+</div>
 </body>
 </html>
