@@ -22,14 +22,16 @@ const earthGroup = new THREE.Group();
 
 // Si tienes texturas 4K locales, cambia las URLs aquí
 const earthMat = new THREE.MeshStandardMaterial({
-    map: loader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),
-    bumpMap: loader.load('https://unpkg.com/three-globe/example/img/earth-topology.png'),
-    bumpScale: 0.5,
+    color: 0x2233ff, // Azul base por si falla la textura
     metalness: 0.1,
     roughness: 0.8
 });
-const earth = new THREE.Mesh(new THREE.SphereGeometry(20, 128, 128), earthMat);
-earthGroup.add(earth);
+
+// Intentar cargar la textura, si falla, queda azul
+loader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg', (tex) => {
+    earthMat.map = tex;
+    earthMat.needsUpdate = true;
+});
 
 // Shader de Atmósfera (Fresnel)
 const atmoMat = new THREE.ShaderMaterial({
