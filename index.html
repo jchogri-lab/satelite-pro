@@ -3,29 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador Espacial Didáctico - NASA Style</title>
+    <title>Misión Espacial: Explorador de Órbita</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; }
-        canvas { display: block; }
-        #ui {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 15px;
-            border-radius: 8px;
-            pointer-events: none;
-            border: 1px solid rgba(255,255,255,0.2);
+        :root { --nasa-blue: #005eb8; --neon-cyan: #00f2ff; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', monospace; }
+        
+        /* Panel de Control Lateral */
+        #hud-left {
+            position: absolute; top: 20px; left: 20px; width: 280px;
+            color: var(--neon-cyan); background: rgba(0, 20, 40, 0.8);
+            padding: 20px; border-left: 4px solid var(--nasa-blue);
+            border-radius: 0 10px 10px 0; pointer-events: none;
+        }
+
+        /* Etiquetas en el espacio (Annotations) */
+        .label {
+            position: absolute; color: white; background: rgba(0,0,0,0.6);
+            padding: 5px 10px; border-radius: 4px; font-size: 12px;
+            pointer-events: none; border: 1px solid var(--neon-cyan);
+            transform: translate(-50%, -50%);
+        }
+
+        /* Botonera de Aprendizaje */
+        #learning-tabs {
+            position: absolute; bottom: 30px; left: 50%;
+            transform: translateX(-50%); display: flex; gap: 10px;
+        }
+        .btn-edu {
+            padding: 10px 20px; background: var(--nasa-blue); color: white;
+            border: none; border-radius: 20px; cursor: pointer;
+            transition: 0.3s; font-weight: bold;
+        }
+        .btn-edu:hover { background: var(--neon-cyan); color: #000; }
+
+        /* Cuadro de "Sabías que..." */
+        #didactic-box {
+            position: absolute; top: 20px; right: 20px; width: 300px;
+            background: rgba(255, 255, 255, 0.9); color: #333;
+            padding: 20px; border-radius: 10px; display: none;
+            box-shadow: 0 0 20px rgba(0,242,255,0.5);
         }
     </style>
 </head>
 <body>
-    <div id="ui">
-        <h2 style="margin:0">Explorador de Órbita Baja</h2>
-        <p style="font-size: 0.9em; opacity: 0.8;">Satélite en LEO (Low Earth Orbit)</p>
+
+    <div id="hud-left">
+        <h2 style="margin:0">Misión: LEO-1</h2>
+        <hr border="1" color="#005eb8">
+        <p>📡 <b>ALTITUD:</b> <span id="val-alt">408 km</span></p>
+        <p>🚀 <b>VELOCIDAD:</b> <span id="val-vel">7.66 km/s</span></p>
+        <p>🌍 <b>UBICACIÓN:</b> <span id="val-lat">0</span></p>
+        <div style="background:#001a33; height:10px; border-radius:5px;">
+            <div id="orbit-progress" style="background:var(--neon-cyan); width:0%; height:100%; border-radius:5px;"></div>
+        </div>
+        <p style="font-size:10px">Progreso de Órbita: <span id="orbit-deg">0</span>°</p>
     </div>
+
+    <div id="didactic-box">
+        <h3 id="edu-title" style="margin-top:0">¿Qué es un Satélite?</h3>
+        <p id="edu-text">Es un objeto que orbita alrededor de la Tierra. ¡Como una luna artificial!</p>
+        <button onclick="closeEdu()" style="float:right">Entendido</button>
+    </div>
+
+    <div id="learning-tabs">
+        <button class="btn-edu" onclick="showEdu('paneles')">☀️ Paneles Solares</button>
+        <button class="btn-edu" onclick="showEdu('orbita')">🔄 ¿Por qué no se cae?</button>
+        <button class="btn-edu" onclick="showEdu('antenas')">📡 Comunicaciones</button>
+    </div>
+
+    <div id="lbl-sat" class="label">SATÉLITE ARTIFICIAL</div>
+    <div id="lbl-earth" class="label">PLANETA TIERRA</div>
+
     <script type="importmap">
         {
             "imports": {
@@ -35,5 +83,32 @@
         }
     </script>
     <script type="module" src="main.js"></script>
+
+    <script>
+        function showEdu(tema) {
+            const box = document.getElementById('didactic-box');
+            const title = document.getElementById('edu-title');
+            const text = document.getElementById('edu-text');
+            box.style.display = 'block';
+
+            const contenidos = {
+                'paneles': {
+                    t: 'Energía Limpia',
+                    d: 'El satélite usa estos "brazos" azules para atrapar la luz del Sol y convertirla en electricidad. ¡Sin sol, el satélite se apaga!'
+                },
+                'orbita': {
+                    t: 'Equilibrio Perfecto',
+                    d: 'El satélite no se cae porque se mueve MUY rápido (7.6 km/s). La gravedad lo atrae, pero su velocidad lo empuja hacia afuera.'
+                },
+                'antenas': {
+                    t: 'Mensajeros del Espacio',
+                    d: 'Estas antenas envían señales a la Tierra. Gracias a ellas tienes GPS en el celular y puedes ver TV o internet.'
+                }
+            };
+            title.innerText = contenidos[tema].t;
+            text.innerText = contenidos[tema].d;
+        }
+        function closeEdu() { document.getElementById('didactic-box').style.display = 'none'; }
+    </script>
 </body>
 </html>
