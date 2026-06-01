@@ -6,3 +6,13 @@ body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', s
 .progress-bg { background: #333; height: 5px; margin-top: 10px; }
 #orbit-bar { background: #00f2ff; height: 100%; width: 0%; }
 button { background: #005eb8; color: white; border: none; padding: 8px; cursor: pointer; margin: 5px; border-radius: 4px; }
+/* Agrega esto a tu style.css */
+.label {
+    position: absolute;
+    color: white;
+    background: rgba(0, 150, 255, 0.7);
+    padding: 5px 10px;
+    border-radius: 5px;
+    pointer-events: none; /* ESTO ES CLAVE para que no bloquee el mouse */
+    z-index: 100;
+}
