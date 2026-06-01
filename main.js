@@ -4,59 +4,63 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100000);
-camera.position.set(12, 8, 20); 
+camera.position.set(10, 5, 20); 
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.5; // Bajamos la exposición para que no sea todo blanco
+renderer.toneMappingExposure = 1.2; // Exposición equilibrada
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// --- 1. EL SOL (Cuerpo visible y Luz) ---
-// Creamos una esfera que represente al sol
-const sunGeometry = new THREE.SphereGeometry(30, 32, 32);
-const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
-sunMesh.position.set(1200, 400, -1000); // Posición lejana
-scene.add(sunMesh);
+// --- 1. EL SOL (Ahora es una fuente de luz gigante visible) ---
+const sunGroup = new THREE.Group();
+const sunGeo = new THREE.SphereGeometry(40, 32, 32);
+const sunMat = new THREE.MeshBasicMaterial({ color: 0xffffff }); // Blanco puro brillante
+const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+sunGroup.add(sunMesh);
 
-// Luz del sol (Direccional)
+// Posición: Lo ponemos a la derecha y un poco atrás
+sunGroup.position.set(800, 300, -600);
+scene.add(sunGroup);
+
+// Luz del Sol (Poderosa)
 const sunLight = new THREE.DirectionalLight(0xffffff, 4);
-sunLight.position.copy(sunMesh.position);
+sunLight.position.copy(sunGroup.position);
 scene.add(sunLight);
 
-// --- 2. LA LUNA ---
-const moonGeo = new THREE.SphereGeometry(10, 32, 32);
-const moonMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 1 });
+// --- 2. LA LUNA (Visible y con textura de roca) ---
+const moonGeo = new THREE.SphereGeometry(15, 32, 32);
+const moonMat = new THREE.MeshStandardMaterial({ 
+    color: 0xcccccc, 
+    emissive: 0xffffff, 
+    emissiveIntensity: 0.2 // Un poquito de brillo propio para que se vea
+});
 const moon = new THREE.Mesh(moonGeo, moonMat);
-moon.position.set(-500, 200, -1500);
+moon.position.set(-600, 150, -1200); // En el lado opuesto al sol
 scene.add(moon);
 
 // --- 3. ILUMINACIÓN PARA EL SATÉLITE ---
-// Luz de relleno para que las sombras no sean negras
-scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-
-// Luz de cámara suave (ayuda a ver detalles sin quemar)
-const camLight = new THREE.PointLight(0xffffff, 1.5);
+scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+const camLight = new THREE.PointLight(0xffffff, 2);
 camera.add(camLight);
 scene.add(camera);
 
 const gltfLoader = new GLTFLoader();
 
-// --- 4. TIERRA (Gigante y cerca) ---
+// --- 4. TIERRA (Inmensa y cerca) ---
 let earth;
 gltfLoader.load('assets/Earth_1_12756.glb', (gltf) => {
     earth = gltf.scene;
-    earth.scale.set(0.18, 0.18, 0.18); 
-    earth.position.set(0, -185, -20); 
+    earth.scale.set(0.2, 0.2, 0.2); 
+    earth.position.set(0, -210, -50); 
     scene.add(earth);
 });
 
-// --- 5. SATÉLITE (Ajuste Final de Realismo) ---
+// --- 5. SATÉLITE (Realista y visible) ---
 const satelliteGroup = new THREE.Group();
 scene.add(satelliteGroup);
 
@@ -64,33 +68,26 @@ gltfLoader.load('assets/satellite.glb', (gltf) => {
     const model = gltf.scene;
     const box = new THREE.Box3().setFromObject(model);
     const size = box.getSize(new THREE.Vector3()).length();
-    const scale = 11 / size; 
-    model.scale.set(scale, scale, scale);
+    model.scale.set(11/size, 11/size, 11/size);
     
     model.traverse((n) => {
         if (n.isMesh) {
-            // Quitamos el blanco total
-            n.material.emissiveIntensity = 0; 
-            n.material.metalness = 0.6; // Metalizado moderado
-            n.material.roughness = 0.3; 
-            
-            // Si el modelo viene muy oscuro de fábrica, lo aclaramos un poco
-            if (n.material.color) {
-                n.material.color.multiplyScalar(1.2); 
-            }
+            n.material.metalness = 0.5;
+            n.material.roughness = 0.4;
+            if (n.material.color) n.material.color.multiplyScalar(1.5);
         }
     });
     satelliteGroup.add(model);
 });
 
-// ESTRELLAS
+// ESTRELLAS (Más grandes y brillantes)
 const starGeo = new THREE.BufferGeometry();
 const starCoords = [];
-for(let i=0; i<30000; i++) {
-    starCoords.push((Math.random()-0.5)*20000, (Math.random()-0.5)*20000, (Math.random()-0.5)*20000);
+for(let i=0; i<20000; i++) {
+    starCoords.push((Math.random()-0.5)*15000, (Math.random()-0.5)*15000, (Math.random()-0.5)*15000);
 }
 starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
-scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 2})));
+scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 3})));
 
 function animate() {
     requestAnimationFrame(animate);
