@@ -4,44 +4,47 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 50000);
-camera.position.set(10, 6, 15);
+camera.position.set(10, 5, 18); 
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 2.2; // Exposición alta como en tus fotos
+renderer.toneMappingExposure = 2.5; // Exposición muy alta para sacar el satélite de la oscuridad
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// --- LUCES DE REFERENCIA (Inspiradas en tus imágenes) ---
-// 1. EL SOL: Luz blanca muy potente
-const sun = new THREE.DirectionalLight(0xffffff, 6);
-sun.position.set(100, 30, 100);
+// --- ILUMINACIÓN "SIEMPRE VISIBLE" ---
+// 1. EL SOL (Luz principal)
+const sun = new THREE.DirectionalLight(0xffffff, 5);
+sun.position.set(100, 50, 100);
 scene.add(sun);
 
-// 2. RESPLANDOR DE LA TIERRA: Luz azul desde abajo que baña el satélite
-const earthAlbedo = new THREE.DirectionalLight(0x4488ff, 3);
-earthAlbedo.position.set(0, -50, 0);
-scene.add(earthAlbedo);
+// 2. LUZ FRONTAL (Pegada a la cámara)
+// Esto garantiza que el lado que vos estás mirando NUNCA esté oscuro
+const camLight = new THREE.PointLight(0xffffff, 4);
+camera.add(camLight);
+scene.add(camera);
 
-// 3. LUZ DE RELLENO: Para que no haya sombras negras
-scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+// 3. LUZ AMBIENTAL FUERTE
+// Esto baña toda la escena para eliminar los negros profundos
+const ambient = new THREE.AmbientLight(0xffffff, 1.2);
+scene.add(ambient);
 
 const gltfLoader = new GLTFLoader();
 
-// --- 1. LA TIERRA (Gigante y cerca, como en tus fotos) ---
+// --- TIERRA (Gigante y cerca) ---
 let earth;
 gltfLoader.load('assets/Earth_1_12756.glb', (gltf) => {
     earth = gltf.scene;
-    earth.scale.set(0.18, 0.18, 0.18); // Escala masiva
-    earth.position.set(0, -185, -20); // El satélite vuela sobre el horizonte
+    earth.scale.set(0.15, 0.15, 0.15); 
+    earth.position.set(0, -160, -30); 
     scene.add(earth);
 });
 
-// --- 2. EL SATÉLITE (Ajuste de Materiales "Gold Foil") ---
+// --- SATÉLITE (Ajuste de Brillo Material) ---
 const satelliteGroup = new THREE.Group();
 scene.add(satelliteGroup);
 
@@ -54,34 +57,27 @@ gltfLoader.load('assets/satellite.glb', (gltf) => {
     
     model.traverse((n) => {
         if (n.isMesh) {
-            // Si es metal/cuerpo, le damos el tono dorado de las fotos
-            if(n.name.toLowerCase().includes('body') || n.name.toLowerCase().includes('shield')) {
-                n.material.color.setHex(0xffcc44); // Oro NASA
+            // Bajamos metalness para que no sea un espejo (que refleja el negro del espacio)
+            n.material.metalness = 0.3; 
+            n.material.roughness = 0.4; 
+            
+            // Forzamos un color más claro (blanco/oro)
+            if (n.material.color) {
+                n.material.color.multiplyScalar(2.0); 
             }
             
-            n.material.metalness = 0.9; 
-            n.material.roughness = 0.2; 
-            
-            // Forzamos un brillo base para que siempre sea visible
-            n.material.emissive = n.material.color;
-            n.material.emissiveIntensity = 0.15;
+            // Agregamos una pequeña emisión para que el satélite "brille" un poco solo
+            n.material.emissive = new THREE.Color(0xffffff);
+            n.material.emissiveIntensity = 0.1;
         }
     });
     satelliteGroup.add(model);
 });
 
-// --- 3. FONDO: ESTRELLAS Y SOL VISIBLE ---
-// Creamos un Sol visual que se vea a lo lejos
-const sunGeo = new THREE.SphereGeometry(20, 32, 32);
-const sunMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-const sunVisual = new THREE.Mesh(sunGeo, sunMat);
-sunVisual.position.set(1000, 300, 1000);
-scene.add(sunVisual);
-
-// Estrellas
+// ESTRELLAS
 const starGeo = new THREE.BufferGeometry();
 const starCoords = [];
-for(let i=0; i<25000; i++) {
+for(let i=0; i<20000; i++) {
     starCoords.push((Math.random()-0.5)*15000, (Math.random()-0.5)*15000, (Math.random()-0.5)*15000);
 }
 starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
