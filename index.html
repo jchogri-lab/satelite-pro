@@ -2,24 +2,22 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Satellite Engine Pro - High Fidelity</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div id="ui">
-        <button class="btn active" data-mode="0">VISTA GLOBAL</button>
-        <button class="btn" data-mode="1">DETALLE MLI</button>
-        <button class="btn" data-mode="2">INSTRUMENTAL</button>
-        <button class="btn" data-mode="3">HORIZONTE</button>
-    </div>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Satélite Pro - NASA</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; }
+        canvas { display: block; }
+    </style>
     <script type="importmap">
         {
             "imports": {
-                "three": "https://unpkg.com/three@0.150.1/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.150.1/examples/jsm/"
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
             }
         }
     </script>
-   <script type="module" src="main.js"></script>
+</head>
+<body>
+    <script type="module" src="main.js"></script>
 </body>
 </html>
