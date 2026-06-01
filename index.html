@@ -2,41 +2,41 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Simulador Espacial Didáctico</title>
+    <title>NASA: Simulador de Satélite Pro</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="hud">
-        <div id="telemetry" class="panel">
-            <h3>DATOS DE MISIÓN</h3>
-            <div>Altitud: <span id="val-alt">408 km</span></div>
-            <div>Velocidad: <span id="val-vel">27,600 km/h</span></div>
-            <div class="progress-bg"><div id="orbit-bar"></div></div>
+        <div id="telemetry-panel" class="panel">
+            <h3>SISTEMA DE TELEMETRÍA</h3>
+            <div class="stat">Altitud: <span id="val-alt">--</span></div>
+            <div class="stat">Velocidad: <span id="val-vel">--</span></div>
+            <div class="stat">Periodo: <span id="val-per">--</span></div>
+            <div class="stat">Latitud: <span id="val-lat">--</span></div>
+            <div class="stat">Inclinación: <span id="val-inc">--</span></div>
+            <div class="stat">Tiempo de Órbita: <span id="val-time">--</span></div>
+            <div class="progress-container">
+                <div id="orbit-progress"></div>
+            </div>
+            <div style="font-size:10px; margin-top:5px;">Progreso: <span id="orbit-deg">0</span>°</div>
         </div>
 
-        <div id="mission-control" class="panel">
-            <h4 id="edu-title">Módulo de Aprendizaje</h4>
-            <p id="edu-text">Haz clic en un botón para explorar la física orbital.</p>
-            <button onclick="updateEdu('solar')">☀️ Energía Solar</button>
-            <button onclick="updateEdu('gravity')">🌍 Gravedad</button>
-            <button onclick="updateEdu('atmo')">🌀 Atmósfera</button>
+        <div id="camera-controls" class="panel">
+            <button class="btn" data-preset="overview" onclick="setCameraPreset('overview')">Vista Global</button>
+            <button class="btn" data-preset="earth" onclick="setCameraPreset('earth')">Tierra</button>
+            <button class="btn" data-preset="satellite" onclick="setCameraPreset('satellite')">Satélite</button>
         </div>
-
-        <div id="lbl-sat" class="label">SATELLITE</div>
-        <div id="lbl-earth" class="label">TIERRA</div>
     </div>
-    <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }</script>
-    <script type="module" src="main.js"></script>
-    <script>
-        function updateEdu(type) {
-            const data = {
-                solar: ["Energía Solar", "Los paneles azules convierten la luz del Sol en electricidad."],
-                gravity: ["Caída Libre", "El satélite 'cae' constantemente alrededor de la Tierra debido a su velocidad."],
-                atmo: ["Atmósfera", "El halo azul es la atmósfera, que protege la vida y frena objetos."]
-            };
-            document.getElementById('edu-title').innerText = data[type][0];
-            document.getElementById('edu-text').innerText = data[type][1];
-        }
+
+    <div id="lbl-sat" class="label">SATELLITE</div>
+    <div id="lbl-earth" class="label">TIERRA</div>
+    <div id="lbl-tropo" class="label">TROPOSFERA</div>
+    <div id="lbl-strato" class="label">ESTRATOSFERA</div>
+    <div id="lbl-leo" class="label">ÓRBITA LEO</div>
+
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
     </script>
+    <script type="module" src="main.js"></script>
 </body>
 </html>
