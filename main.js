@@ -1,74 +1,82 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+// --- CONFIGURACIÓN BÁSICA ---
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000105); 
+scene.background = new THREE.Color(0x000000);
 
-// 1. CÁMARA MUCHO MÁS ALEJADA (Para no chocar con el modelo)
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 20000);
-camera.position.set(30, 15, 50); // Posición inicial lejana
+camera.position.set(15, 10, 25);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 document.body.appendChild(renderer.domElement);
 
-// 2. LUCES POTENTES
-const sun = new THREE.DirectionalLight(0xffffff, 3.5);
+// --- CONTROLES DE MOUSE ---
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; // Suaviza el movimiento
+controls.autoRotate = false;   // Dejamos que el usuario lo maneje
+
+// --- ILUMINACIÓN ---
+const sun = new THREE.DirectionalLight(0xffffff, 3);
 sun.position.set(50, 50, 50);
 scene.add(sun);
-scene.add(new THREE.AmbientLight(0x404040, 0.6));
+scene.add(new THREE.AmbientLight(0xffffff, 0.2));
 
-// 3. TIERRA EN EL FONDO (Ubicada lejos para que no moleste)
-const earth = new THREE.Mesh(
-    new THREE.SphereGeometry(15, 64, 64),
-    new THREE.MeshStandardMaterial({ color: 0x103070, roughness: 0.8 })
-);
-earth.position.set(0, -40, -60); // Bien abajo y al fondo
+// --- TIERRA REALISTA ---
+const texLoader = new THREE.TextureLoader();
+const earthGeo = new THREE.SphereGeometry(15, 64, 64);
+const earthMat = new THREE.MeshStandardMaterial({
+    // Textura de alta resolución (Blue Marble)
+    map: texLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),
+    bumpMap: texLoader.load('https://unpkg.com/three-globe/example/img/earth-topology.png'),
+    bumpScale: 0.15,
+});
+
+const earth = new THREE.Mesh(earthGeo, earthMat);
+earth.position.set(0, -40, -60);
 scene.add(earth);
 
-// 4. ESTRELLAS
+// --- ESTRELLAS ---
 const starGeo = new THREE.BufferGeometry();
 const starCoords = [];
-for(let i=0; i<10000; i++) {
+for(let i=0; i<12000; i++) {
     starCoords.push((Math.random()-0.5)*10000, (Math.random()-0.5)*10000, (Math.random()-0.5)*10000);
 }
 starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
-scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 2})));
+scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 1.5})));
 
-// 5. CARGA DEL SATÉLITE CON AUTO-ESCALADO
+// --- CARGA DEL SATÉLITE ---
 const satelliteGroup = new THREE.Group();
 scene.add(satelliteGroup);
 
 const gltfLoader = new GLTFLoader();
 gltfLoader.load('assets/satellite.glb', (gltf) => {
     const model = gltf.scene;
-    
-    // ESTO CORRIGE EL TAMAÑO: Achica el modelo para que no ocupe toda la pantalla
     const box = new THREE.Box3().setFromObject(model);
     const size = box.getSize(new THREE.Vector3()).length();
     const center = box.getCenter(new THREE.Vector3());
     
-    const scale = 10 / size; // Forzamos un tamaño manejable
+    const scale = 8 / size; // Ajuste de tamaño
     model.scale.set(scale, scale, scale);
     model.position.x = -center.x * scale;
     model.position.y = -center.y * scale;
     model.position.z = -center.z * scale;
     
     satelliteGroup.add(model);
-    console.log("Satélite escalado y centrado");
-}, undefined, (error) => {
-    console.error("Error cargando .glb", error);
-    // Cubo de emergencia por si el archivo no está
-    const box = new THREE.Mesh(new THREE.BoxGeometry(5,5,5), new THREE.MeshStandardMaterial({color: 0xffcc00}));
-    satelliteGroup.add(box);
 });
 
-// 6. ANIMACIÓN Y CONTROLES
+// --- ANIMACIÓN ---
 function animate() {
     requestAnimationFrame(animate);
-    satelliteGroup.rotation.y += 0.003; // Rotación lenta
-    earth.rotation.y += 0.0002;
+    
+    controls.update(); // Necesario para el movimiento del mouse
+    
+    // Rotación suave de la tierra
+    earth.rotation.y += 0.0005;
+    
     renderer.render(scene, camera);
 }
 
