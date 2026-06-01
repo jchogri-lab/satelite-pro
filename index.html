@@ -3,53 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador Espacial Educativo</title>
+    <title>NASA Kids: Simulador de Satélites</title>
     <style>
+        :root { --glow: #00f2ff; --dark-space: #000a1a; }
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
-        #ui-layer {
+        
+        #hud {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; color: #00f2ff;
+            pointer-events: none; border: 20px solid rgba(0, 242, 255, 0.05); box-sizing: border-box;
         }
-        .panel {
-            position: absolute; background: rgba(0, 15, 30, 0.85);
-            padding: 15px; border: 1px solid #005eb8; border-radius: 8px;
-            pointer-events: auto;
+
+        .glass-panel {
+            position: absolute; background: rgba(0, 20, 40, 0.7);
+            backdrop-filter: blur(5px); border: 1px solid var(--glow);
+            padding: 20px; border-radius: 15px; color: var(--glow); pointer-events: auto;
         }
-        #telemetry { top: 20px; left: 20px; width: 220px; }
-        #info-box { bottom: 20px; left: 50%; transform: translateX(-50%); width: 400px; text-align: center; }
+
+        #telemetry { top: 30px; left: 30px; width: 250px; }
+        #mission-control { bottom: 30px; right: 30px; width: 320px; }
+        
         .label {
-            position: absolute; background: rgba(0,0,0,0.7); color: white;
-            padding: 4px 8px; border-radius: 4px; font-size: 12px;
-            border: 1px solid #00f2ff; transform: translate(-50%, -50%);
+            position: absolute; color: white; background: rgba(0, 242, 255, 0.2);
+            padding: 5px 12px; border-radius: 20px; font-size: 11px;
+            border: 1px solid var(--glow); transform: translate(-50%, -50%);
+            text-transform: uppercase; letter-spacing: 1px;
         }
-        button {
-            background: #005eb8; color: white; border: none; padding: 8px 15px;
-            cursor: pointer; border-radius: 4px; margin: 5px;
+
+        .btn-nasa {
+            background: transparent; color: var(--glow); border: 1px solid var(--glow);
+            padding: 8px 12px; margin: 5px; cursor: pointer; transition: 0.3s; width: 100%;
+            text-align: left; border-radius: 5px;
         }
-        button:hover { background: #00f2ff; color: #000; }
+        .btn-nasa:hover { background: var(--glow); color: black; }
     </style>
 </head>
 <body>
-    <div id="ui-layer">
-        <div id="telemetry" class="panel">
-            <h3 style="margin:0 0 10px 0;">TELEMETRÍA NASA</h3>
+    <div id="hud">
+        <div id="telemetry" class="glass-panel">
+            <h3 style="margin:0">STAT-LOG: LEO</h3>
+            <hr border="0" style="border-top:1px solid var(--glow); margin:10px 0;">
             <div>Altitud: <span id="val-alt">408 km</span></div>
-            <div>Velocidad: <span id="val-vel">7.66 km/s</span></div>
-            <div style="margin-top:10px; background:#333; height:4px;">
-                <div id="orbit-bar" style="width:0%; background:#00f2ff; height:100%;"></div>
-            </div>
+            <div>Velocidad: <span id="val-vel">27,600 km/h</span></div>
+            <div>Inclinación: <span>51.6° (ISS)</span></div>
+            <div style="margin-top:15px; font-size:12px; color:white;">Status: <span style="color:#0f0">SISTEMAS NOMINALES</span></div>
         </div>
 
-        <div id="info-box" class="panel">
-            <h4 id="edu-title">Sistema de Aprendizaje</h4>
-            <p id="edu-text" style="font-size:14px;">Haz clic en los botones para explorar conceptos espaciales.</p>
-            <button onclick="updateEdu('solar')">Paneles</button>
-            <button onclick="updateEdu('gravity')">Gravedad</button>
-            <button onclick="updateEdu('atmo')">Atmósfera</button>
+        <div id="mission-control" class="glass-panel">
+            <h4 style="margin:0">MÓDULO DE APRENDIZAJE</h4>
+            <p id="edu-text" style="font-size:13px; color:white; min-height:60px;">Selecciona un componente para analizar.</p>
+            <button class="btn-nasa" onclick="showInfo('foil')">🛡️ Manta Térmica (Foil)</button>
+            <button class="btn-nasa" onclick="showInfo('orbit')">🛰️ ¿Por qué no flota?</button>
+            <button class="btn-nasa" onclick="showInfo('atmo')">🌀 Capas Atmosféricas</button>
         </div>
 
-        <div id="lbl-sat" class="label">SATÉLITE</div>
-        <div id="lbl-earth" class="label">TIERRA</div>
+        <div id="lbl-sat" class="label">SATELLITE UNIT-1</div>
+        <div id="lbl-earth" class="label">PLANETA TIERRA</div>
     </div>
 
     <script type="importmap">
@@ -57,16 +65,14 @@
     </script>
     <script type="module" src="main.js"></script>
     <script>
-        function updateEdu(type) {
-            const t = document.getElementById('edu-title');
-            const d = document.getElementById('edu-text');
-            const data = {
-                solar: ["Energía Solar", "Los paneles azules convierten la luz del Sol en electricidad para que el satélite funcione."],
-                gravity: ["Caída Libre", "El satélite no se cae porque se mueve tan rápido que 'falla' el suelo mientras cae."],
-                atmo: ["La Protección", "Ese resplandor azul es la atmósfera. Protege la vida y frena a los objetos que entran."]
+        function showInfo(topic) {
+            const el = document.getElementById('edu-text');
+            const info = {
+                foil: "Ese brillo dorado es una manta térmica (MLI). Protege al satélite de temperaturas extremas: de -150°C en la sombra a 150°C al sol.",
+                orbit: "No está flotando, está CAYENDO. Pero se mueve tan rápido hacia adelante que la curvatura de la Tierra se aleja mientras él cae.",
+                atmo: "La línea azul que ves es la atmósfera. Solo mide 100km de espesor. El satélite está justo por encima para evitar el roce del aire."
             };
-            t.innerText = data[type][0];
-            d.innerText = data[type][1];
+            el.innerText = info[topic];
         }
     </script>
 </body>
