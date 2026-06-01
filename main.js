@@ -25,6 +25,51 @@ loader.load('assets/Earth_1_12756.glb', (gltf) => {
     earth.position.set(0, -225, -20);
     scene.add(earth);
 });
+// --- VARIABLES GLOBALES ---
+let isPaused = false;
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+// --- PAUSA / PLAY ---
+function togglePause() { isPaused = !isPaused; }
+
+// --- DETECCIÓN DE CLIC (INSPECCIÓN) ---
+window.addEventListener('click', (event) => {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(satelliteGroup.children, true);
+    
+    if (intersects.length > 0) {
+        const part = intersects[0].object;
+        showPartInfo(part.name); // Función para mostrar el info-box
+    }
+});
+
+// --- ANIMACIÓN ---
+function animate() {
+    requestAnimationFrame(animate);
+    // En tu lógica de botones (setCameraPreset)
+case 'satellite':
+    // Fijar cámara cerca del satélite
+    controls.minDistance = 2;
+    controls.maxDistance = 20;
+    // La cámara apunta al grupo del satélite
+    controls.target.copy(satelliteGroup.position);
+    break;
+    
+    // Si no está pausado, que orbite
+    if (!isPaused) {
+        const time = Date.now() * 0.0005;
+        satelliteGroup.position.set(Math.cos(time) * 42, 0, Math.sin(time) * 42);
+        satelliteGroup.rotation.y = -time;
+    }
+    
+    updateUI();
+    controls.update();
+    renderer.render(scene, camera);
+}
 
 loader.load('assets/satellite.glb', (gltf) => {
     satelliteGroup.add(gltf.scene);
@@ -65,3 +110,4 @@ function animate() {
     renderer.render(scene, camera);
 }
 animate();
+
