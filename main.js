@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+}import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -8,27 +8,34 @@ camera.position.set(15, 10, 25);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+
+// --- AJUSTE DE COLOR Y BRILLO ---
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.5; // Aumentamos la exposición global
+renderer.toneMappingExposure = 2.2; // Subimos la exposición para ver más detalle
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// --- ILUMINACIÓN REFORZADA ---
-// 1. Luz del Sol (Lejana)
-const sun = new THREE.DirectionalLight(0xffffff, 3);
+// --- SISTEMA DE ILUMINACIÓN MULTIPUNTO ---
+// 1. Luz del Sol (Principal)
+const sun = new THREE.DirectionalLight(0xffffff, 4);
 sun.position.set(50, 50, 50);
 scene.add(sun);
 
-// 2. Luz de Relleno (Para que las sombras no sean negras)
-const ambient = new THREE.AmbientLight(0xffffff, 0.8); 
+// 2. Luz de Relleno (Ambiental fuerte para eliminar negros totales)
+const ambient = new THREE.AmbientLight(0xffffff, 1.2); 
 scene.add(ambient);
 
-// 3. Luz Frontal "Cámara" (Acompaña la vista para iluminar el frente del satélite)
-const lightFollow = new THREE.PointLight(0xffffff, 2);
-camera.add(lightFollow); // La luz se pega a la cámara
+// 3. Luz de la Tierra (Reflejo azulado desde abajo)
+const earthLight = new THREE.PointLight(0x4488ff, 2);
+earthLight.position.set(0, -50, 0);
+scene.add(earthLight);
+
+// 4. LUZ FRONTAL MÓVIL (Sigue a la cámara para que siempre veas el satélite iluminado)
+const frontLight = new THREE.PointLight(0xffffff, 2.5);
+camera.add(frontLight); 
 scene.add(camera);
 
 const gltfLoader = new GLTFLoader();
@@ -55,9 +62,10 @@ gltfLoader.load('assets/satellite.glb', (gltf) => {
     
     model.traverse((n) => {
         if (n.isMesh) {
-            // Ajustamos el material para que sea brillante pero no oscuro
-            n.material.metalness = 0.6; // Bajamos un poco el metal para que no sea un espejo negro
-            n.material.roughness = 0.4; // Le damos un toque más mate para que disperse la luz
+            // Ajuste para que el material no sea tan oscuro
+            n.material.metalness = 0.4; // Menos metal = más color visible
+            n.material.roughness = 0.3; // Superficie más suave para captar mejor la luz
+            n.material.emissive = new THREE.Color(0x111111); // Un pequeño brillo propio para que no sea negro
         }
     });
     
