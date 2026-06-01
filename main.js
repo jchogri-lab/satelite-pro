@@ -2,67 +2,62 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// --- ESCENA ---
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
 
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
-camera.position.set(10, 5, 20); // Posición inicial cómoda
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
+camera.position.set(0, 5, 25);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
-// --- CONTROLES (ESTO PERMITE EL MOVIMIENTO) ---
+// CONTROLES FORZADOS
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; // Hace que el giro sea suave
-controls.dampingFactor = 0.05;
+controls.enableDamping = true;
+controls.screenSpacePanning = true;
 
-// --- ILUMINACIÓN REALISTA ---
-const sun = new THREE.DirectionalLight(0xffffff, 2.5);
-sun.position.set(20, 20, 20);
-scene.add(sun);
-scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+// LUZ DESDE VARIOS ÁNGULOS
+const light1 = new THREE.DirectionalLight(0xffffff, 2);
+light1.position.set(10, 10, 10);
+scene.add(light1);
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
 
-// --- LA TIERRA MEJORADA ---
-const loader = new THREE.TextureLoader();
-// Intentamos cargar una textura fotorrealista
-const earthTexture = loader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg');
-
+// TIERRA "PINTADA" CON CÓDIGO (No necesita archivos externos)
 const earthGeo = new THREE.SphereGeometry(15, 64, 64);
-const earthMat = new THREE.MeshStandardMaterial({ 
-    map: earthTexture,
-    color: 0x2233ff, // Color de base por si la textura tarda en cargar
-    roughness: 0.8
+const earthMat = new THREE.MeshPhongMaterial({
+    color: 0x1133aa,
+    emissive: 0x051122,
+    specular: 0x222222,
+    shininess: 25,
+    flatShading: false
 });
+
+// Le agregamos un "brillo" atmosférico para que no sea solo un círculo
 const earth = new THREE.Mesh(earthGeo, earthMat);
-earth.position.set(0, -35, -50); 
+earth.position.set(0, -35, -50);
 scene.add(earth);
 
-// --- FONDO DE ESTRELLAS ---
+// FONDO DE ESTRELLAS
 const starGeo = new THREE.BufferGeometry();
 const starCoords = [];
-for(let i=0; i<10000; i++) {
-    starCoords.push((Math.random()-0.5)*5000, (Math.random()-0.5)*2000, (Math.random()-0.5)*5000);
+for(let i=0; i<5000; i++) {
+    starCoords.push((Math.random()-0.5)*2000, (Math.random()-0.5)*2000, (Math.random()-0.5)*2000);
 }
 starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
-const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 0.8}));
-scene.add(stars);
+scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 1})));
 
-// --- CARGA DEL SATÉLITE ---
+// CARGA DEL SATÉLITE
 const satelliteGroup = new THREE.Group();
 scene.add(satelliteGroup);
 
 const gltfLoader = new GLTFLoader();
 gltfLoader.load('assets/satellite.glb', (gltf) => {
     const model = gltf.scene;
-    
-    // Auto-ajuste para que se vea bien de entrada
     const box = new THREE.Box3().setFromObject(model);
     const size = box.getSize(new THREE.Vector3()).length();
     const center = box.getCenter(new THREE.Vector3());
-    const scale = 7 / size; 
+    const scale = 8 / size;
     
     model.scale.set(scale, scale, scale);
     model.position.x = -center.x * scale;
@@ -70,18 +65,16 @@ gltfLoader.load('assets/satellite.glb', (gltf) => {
     model.position.z = -center.z * scale;
     
     satelliteGroup.add(model);
-}, undefined, (error) => console.error(error));
+});
 
-// --- BUCLE DE ANIMACIÓN ---
 function animate() {
     requestAnimationFrame(animate);
     
-    // Esto es vital para que el mouse funcione
+    // Si el mouse no funciona, esto hará que el satélite gire solo
+    // para confirmar que el código está corriendo
+    satelliteGroup.rotation.y += 0.002; 
+    
     controls.update(); 
-    
-    // Rotación suave de la tierra
-    earth.rotation.y += 0.0005;
-    
     renderer.render(scene, camera);
 }
 
