@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Satellite Engine Pro - High Fidelity</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="ui">
+        <button class="btn active" data-mode="0">VISTA GLOBAL</button>
+        <button class="btn" data-mode="1">DETALLE MLI</button>
+        <button class="btn" data-mode="2">INSTRUMENTAL</button>
+        <button class="btn" data-mode="3">HORIZONTE</button>
+    </div>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.150.1/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.150.1/examples/jsm/"
+            }
+        }
+    </script>
+   <script type="module" src="main.js"></script>
+</body>
+</html>
