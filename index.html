@@ -3,11 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Satélite Pro - NASA</title>
+    <title>Simulador Espacial Didáctico - NASA Style</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; }
         canvas { display: block; }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            pointer-events: none;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
     </style>
+</head>
+<body>
+    <div id="ui">
+        <h2 style="margin:0">Explorador de Órbita Baja</h2>
+        <p style="font-size: 0.9em; opacity: 0.8;">Satélite en LEO (Low Earth Orbit)</p>
+    </div>
     <script type="importmap">
         {
             "imports": {
@@ -16,8 +34,6 @@
             }
         }
     </script>
-</head>
-<body>
     <script type="module" src="main.js"></script>
 </body>
 </html>
