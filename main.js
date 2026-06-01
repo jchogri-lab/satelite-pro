@@ -4,49 +4,44 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 50000);
-camera.position.set(10, 5, 15); 
+camera.position.set(10, 6, 15);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 2.0; // Exposición alta para resaltar detalles
+renderer.toneMappingExposure = 2.2; // Exposición alta como en tus fotos
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// --- SISTEMA DE ILUMINACIÓN PRO ---
-// 1. EL SOL: Luz direccional muy fuerte desde un costado
+// --- LUCES DE REFERENCIA (Inspiradas en tus imágenes) ---
+// 1. EL SOL: Luz blanca muy potente
 const sun = new THREE.DirectionalLight(0xffffff, 6);
-sun.position.set(100, 40, 100);
+sun.position.set(100, 30, 100);
 scene.add(sun);
 
-// 2. LUZ DE CÁMARA: Para que nunca pierdas el detalle frontal
-const camLight = new THREE.PointLight(0xffffff, 3);
-camera.add(camLight);
-scene.add(camera);
+// 2. RESPLANDOR DE LA TIERRA: Luz azul desde abajo que baña el satélite
+const earthAlbedo = new THREE.DirectionalLight(0x4488ff, 3);
+earthAlbedo.position.set(0, -50, 0);
+scene.add(earthAlbedo);
 
-// 3. LUZ DE REBOTE DE LA TIERRA: Luz azulada desde abajo
-const earthLight = new THREE.PointLight(0x4488ff, 5, 200);
-earthLight.position.set(0, -30, 0);
-scene.add(earthLight);
-
-// 4. LUZ DE RELLENO ESPACIAL: Para evitar negros absolutos
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+// 3. LUZ DE RELLENO: Para que no haya sombras negras
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 
 const gltfLoader = new GLTFLoader();
 
-// --- CARGA DE LA TIERRA (Órbitando cerca) ---
+// --- 1. LA TIERRA (Gigante y cerca, como en tus fotos) ---
 let earth;
 gltfLoader.load('assets/Earth_1_12756.glb', (gltf) => {
     earth = gltf.scene;
-    earth.scale.set(0.12, 0.12, 0.12); 
-    earth.position.set(0, -135, -20); 
+    earth.scale.set(0.18, 0.18, 0.18); // Escala masiva
+    earth.position.set(0, -185, -20); // El satélite vuela sobre el horizonte
     scene.add(earth);
 });
 
-// --- CARGA DEL SATÉLITE (Realismo Extremo) ---
+// --- 2. EL SATÉLITE (Ajuste de Materiales "Gold Foil") ---
 const satelliteGroup = new THREE.Group();
 scene.add(satelliteGroup);
 
@@ -59,36 +54,31 @@ gltfLoader.load('assets/satellite.glb', (gltf) => {
     
     model.traverse((n) => {
         if (n.isMesh) {
-            // FORZADO DE MATERIAL METÁLICO
-            n.material.metalness = 0.7; // Un poco menos de 1 para que no sea un espejo negro
-            n.material.roughness = 0.2; // Pulido
-            
-            // ACLARAMOS EL COLOR BASE PARA QUE SE VEA SIEMPRE
-            if (n.material.color) {
-                n.material.color.multiplyScalar(1.8);
+            // Si es metal/cuerpo, le damos el tono dorado de las fotos
+            if(n.name.toLowerCase().includes('body') || n.name.toLowerCase().includes('shield')) {
+                n.material.color.setHex(0xffcc44); // Oro NASA
             }
             
-            // EFECTO DE LUZ PROPIA SUAVE (Para que no se apague nunca)
-            n.material.emissive = new THREE.Color(0xffffff);
-            n.material.emissiveIntensity = 0.1;
+            n.material.metalness = 0.9; 
+            n.material.roughness = 0.2; 
+            
+            // Forzamos un brillo base para que siempre sea visible
+            n.material.emissive = n.material.color;
+            n.material.emissiveIntensity = 0.15;
         }
     });
     satelliteGroup.add(model);
 });
 
-// --- DECORACIÓN ESPACIAL ---
-function addPlanet(color, size, x, y, z) {
-    const p = new THREE.Mesh(
-        new THREE.SphereGeometry(size, 32, 32),
-        new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.2 })
-    );
-    p.position.set(x, y, z);
-    scene.add(p);
-}
-addPlanet(0xffaa55, 30, -800, 200, -1500); // Marte lejano
-addPlanet(0xaaaaaa, 15, 400, 100, -1000);  // Luna/Planeta lejano
+// --- 3. FONDO: ESTRELLAS Y SOL VISIBLE ---
+// Creamos un Sol visual que se vea a lo lejos
+const sunGeo = new THREE.SphereGeometry(20, 32, 32);
+const sunMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+const sunVisual = new THREE.Mesh(sunGeo, sunMat);
+sunVisual.position.set(1000, 300, 1000);
+scene.add(sunVisual);
 
-// ESTRELLAS
+// Estrellas
 const starGeo = new THREE.BufferGeometry();
 const starCoords = [];
 for(let i=0; i<25000; i++) {
