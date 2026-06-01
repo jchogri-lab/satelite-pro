@@ -3,48 +3,60 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 50000);
-camera.position.set(10, 5, 18); 
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100000);
+camera.position.set(12, 8, 20); 
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 2.5; // Exposición muy alta para sacar el satélite de la oscuridad
+renderer.toneMappingExposure = 1.5; // Bajamos la exposición para que no sea todo blanco
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// --- ILUMINACIÓN "SIEMPRE VISIBLE" ---
-// 1. EL SOL (Luz principal)
-const sun = new THREE.DirectionalLight(0xffffff, 5);
-sun.position.set(100, 50, 100);
-scene.add(sun);
+// --- 1. EL SOL (Cuerpo visible y Luz) ---
+// Creamos una esfera que represente al sol
+const sunGeometry = new THREE.SphereGeometry(30, 32, 32);
+const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
+sunMesh.position.set(1200, 400, -1000); // Posición lejana
+scene.add(sunMesh);
 
-// 2. LUZ FRONTAL (Pegada a la cámara)
-// Esto garantiza que el lado que vos estás mirando NUNCA esté oscuro
-const camLight = new THREE.PointLight(0xffffff, 4);
+// Luz del sol (Direccional)
+const sunLight = new THREE.DirectionalLight(0xffffff, 4);
+sunLight.position.copy(sunMesh.position);
+scene.add(sunLight);
+
+// --- 2. LA LUNA ---
+const moonGeo = new THREE.SphereGeometry(10, 32, 32);
+const moonMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 1 });
+const moon = new THREE.Mesh(moonGeo, moonMat);
+moon.position.set(-500, 200, -1500);
+scene.add(moon);
+
+// --- 3. ILUMINACIÓN PARA EL SATÉLITE ---
+// Luz de relleno para que las sombras no sean negras
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+
+// Luz de cámara suave (ayuda a ver detalles sin quemar)
+const camLight = new THREE.PointLight(0xffffff, 1.5);
 camera.add(camLight);
 scene.add(camera);
 
-// 3. LUZ AMBIENTAL FUERTE
-// Esto baña toda la escena para eliminar los negros profundos
-const ambient = new THREE.AmbientLight(0xffffff, 1.2);
-scene.add(ambient);
-
 const gltfLoader = new GLTFLoader();
 
-// --- TIERRA (Gigante y cerca) ---
+// --- 4. TIERRA (Gigante y cerca) ---
 let earth;
 gltfLoader.load('assets/Earth_1_12756.glb', (gltf) => {
     earth = gltf.scene;
-    earth.scale.set(0.15, 0.15, 0.15); 
-    earth.position.set(0, -160, -30); 
+    earth.scale.set(0.18, 0.18, 0.18); 
+    earth.position.set(0, -185, -20); 
     scene.add(earth);
 });
 
-// --- SATÉLITE (Ajuste de Brillo Material) ---
+// --- 5. SATÉLITE (Ajuste Final de Realismo) ---
 const satelliteGroup = new THREE.Group();
 scene.add(satelliteGroup);
 
@@ -57,18 +69,15 @@ gltfLoader.load('assets/satellite.glb', (gltf) => {
     
     model.traverse((n) => {
         if (n.isMesh) {
-            // Bajamos metalness para que no sea un espejo (que refleja el negro del espacio)
-            n.material.metalness = 0.3; 
-            n.material.roughness = 0.4; 
+            // Quitamos el blanco total
+            n.material.emissiveIntensity = 0; 
+            n.material.metalness = 0.6; // Metalizado moderado
+            n.material.roughness = 0.3; 
             
-            // Forzamos un color más claro (blanco/oro)
+            // Si el modelo viene muy oscuro de fábrica, lo aclaramos un poco
             if (n.material.color) {
-                n.material.color.multiplyScalar(2.0); 
+                n.material.color.multiplyScalar(1.2); 
             }
-            
-            // Agregamos una pequeña emisión para que el satélite "brille" un poco solo
-            n.material.emissive = new THREE.Color(0xffffff);
-            n.material.emissiveIntensity = 0.1;
         }
     });
     satelliteGroup.add(model);
@@ -77,11 +86,11 @@ gltfLoader.load('assets/satellite.glb', (gltf) => {
 // ESTRELLAS
 const starGeo = new THREE.BufferGeometry();
 const starCoords = [];
-for(let i=0; i<20000; i++) {
-    starCoords.push((Math.random()-0.5)*15000, (Math.random()-0.5)*15000, (Math.random()-0.5)*15000);
+for(let i=0; i<30000; i++) {
+    starCoords.push((Math.random()-0.5)*20000, (Math.random()-0.5)*20000, (Math.random()-0.5)*20000);
 }
 starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
-scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 2.5})));
+scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 2})));
 
 function animate() {
     requestAnimationFrame(animate);
