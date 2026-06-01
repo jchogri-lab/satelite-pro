@@ -1,4 +1,4 @@
-}import * as THREE from 'three';
+import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -9,33 +9,23 @@ camera.position.set(15, 10, 25);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 
-// --- AJUSTE DE COLOR Y BRILLO ---
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 2.2; // Subimos la exposición para ver más detalle
+// --- MÁXIMA EXPOSICIÓN ---
+renderer.toneMapping = THREE.LinearToneMapping; // Cambiamos a Linear para un brillo más crudo
+renderer.toneMappingExposure = 3.0; // Exposición muy alta
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// --- SISTEMA DE ILUMINACIÓN MULTIPUNTO ---
-// 1. Luz del Sol (Principal)
-const sun = new THREE.DirectionalLight(0xffffff, 4);
-sun.position.set(50, 50, 50);
-scene.add(sun);
+// --- SISTEMA DE ILUMINACIÓN TOTAL ---
+// 1. Luz de "Cielo": Ilumina todo parejo para que nada sea negro
+const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 2.0);
+scene.add(hemiLight);
 
-// 2. Luz de Relleno (Ambiental fuerte para eliminar negros totales)
-const ambient = new THREE.AmbientLight(0xffffff, 1.2); 
-scene.add(ambient);
-
-// 3. Luz de la Tierra (Reflejo azulado desde abajo)
-const earthLight = new THREE.PointLight(0x4488ff, 2);
-earthLight.position.set(0, -50, 0);
-scene.add(earthLight);
-
-// 4. LUZ FRONTAL MÓVIL (Sigue a la cámara para que siempre veas el satélite iluminado)
-const frontLight = new THREE.PointLight(0xffffff, 2.5);
-camera.add(frontLight); 
+// 2. Luz de Cámara: Un foco potente que siempre apunta a lo que mirás
+const camLight = new THREE.DirectionalLight(0xffffff, 3.0);
+camera.add(camLight);
 scene.add(camera);
 
 const gltfLoader = new GLTFLoader();
@@ -49,7 +39,7 @@ gltfLoader.load('assets/Earth_1_12756.glb', (gltf) => {
     scene.add(earth);
 }, undefined, (e) => console.error(e));
 
-// --- CARGA DEL SATÉLITE ---
+// --- CARGA DEL SATÉLITE CON FORZADO DE MATERIAL ---
 const satelliteGroup = new THREE.Group();
 scene.add(satelliteGroup);
 
@@ -62,32 +52,33 @@ gltfLoader.load('assets/satellite.glb', (gltf) => {
     
     model.traverse((n) => {
         if (n.isMesh) {
-            // Ajuste para que el material no sea tan oscuro
-            n.material.metalness = 0.4; // Menos metal = más color visible
-            n.material.roughness = 0.3; // Superficie más suave para captar mejor la luz
-            n.material.emissive = new THREE.Color(0x111111); // Un pequeño brillo propio para que no sea negro
+            // FORZAMOS EL MATERIAL: Lo hacemos más claro y sensible a la luz
+            n.material.metalness = 0.2; // Menos metal para que no refleje el "negro" del espacio
+            n.material.roughness = 0.5; // Más rugoso para que la luz rebote en todas direcciones
+            if (n.material.map) n.material.map.encoding = THREE.SRGBColorSpace;
+            
+            // ACLARAMOS EL COLOR BASE
+            n.material.color.multiplyScalar(2.0); // Duplica la claridad del color original
         }
     });
     
     satelliteGroup.add(model);
 });
 
-// ESTRELLAS
+// ESTRELLAS (Aumentamos tamaño para que se vean más)
 const starGeo = new THREE.BufferGeometry();
 const starCoords = [];
-for(let i=0; i<15000; i++) {
-    starCoords.push((Math.random()-0.5)*15000, (Math.random()-0.5)*15000, (Math.random()-0.5)*15000);
+for(let i=0; i<10000; i++) {
+    starCoords.push((Math.random()-0.5)*10000, (Math.random()-0.5)*10000, (Math.random()-0.5)*10000);
 }
 starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
-scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 2})));
+scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 3})));
 
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
-    
     if (earth) earth.rotation.y += 0.0002;
     satelliteGroup.rotation.y += 0.002; 
-    
     renderer.render(scene, camera);
 }
 animate();
